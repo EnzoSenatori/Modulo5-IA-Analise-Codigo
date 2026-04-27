@@ -1,20 +1,38 @@
+from app.config import settings
 from app.adapters.driven.analise.adaptador_parser_python import AdaptadorParserPython
+from app.adapters.driven.llm.adaptador_llm import AdaptadorLLMGemini, AdaptadorLLMFake
 from app.application.services.openapi_service_impl import OpenApiServiceImpl
+from app.application.services.estrutura_service_impl import EstruturaServiceImpl
+
 
 class CompositionRoot:
-    """
-    A Raiz de Composição é responsável por instanciar as classes
-    e 'injetar' as dependências necessárias.
-    """
+    """Instancia adapters e injeta dependências nos services."""
 
     def __init__(self):
-        # 1. Instanciamos os adaptadores (Driven Adapters)
+        # Driven adapters
         self.parser_python = AdaptadorParserPython()
 
-        # 2. Instanciamos os serviços injetando seus respectivos adaptadores
+        if settings.GEMINI_API_KEY:
+            self.provedor_llm = AdaptadorLLMGemini(
+                api_key=settings.GEMINI_API_KEY,
+                modelo=settings.LLM_MODELO,
+                timeout=settings.LLM_TIMEOUT_S,
+            )
+        else:
+            # Sem chave configurada → modo dev/demo com fake.
+            self.provedor_llm = AdaptadorLLMFake()
+
+        # Services
         self.openapi_service = OpenApiServiceImpl(
-            parser_codigo=self.parser_python
+            parser_codigo=self.parser_python,
+        )
+        self.estrutura_service = EstruturaServiceImpl(
+            parser_codigo=self.parser_python,
+            provedor_llm=self.provedor_llm,
         )
 
     def get_openapi_service(self):
         return self.openapi_service
+
+    def get_estrutura_service(self):
+        return self.estrutura_service
