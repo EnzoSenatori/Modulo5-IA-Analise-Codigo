@@ -43,6 +43,30 @@ curl -X POST http://localhost:8001/openapi/extrair \
   -d '{"codigo":"@app.get(\"/x\")\ndef rota(): pass"}'
 ```
 
+### IA-12 — Health check de IA
+
+```bash
+curl http://localhost:8001/saude/ia
+```
+
+Resposta:
+
+```json
+{
+  "status": "degraded",
+  "checks": {
+    "provedor_llm": {"status": "degraded", "detalhe": {"tipo": "AdaptadorLLMFake"}},
+    "cache":        {"status": "not_configured", "detalhe": {}},
+    "banco":        {"status": "not_configured", "detalhe": {}}
+  },
+  "tempo_ms": 0
+}
+```
+
+`status` agregado: `healthy` (tudo ok) | `degraded` (algum subsistema reduzido)
+| `unhealthy` (algum subsistema fora). Resposta garantida em **< 200ms** —
+checks rodam só por inspeção dos adapters injetados, sem chamada de rede.
+
 ## Testes
 
 ```bash
