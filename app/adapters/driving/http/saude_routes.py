@@ -11,10 +11,19 @@ def get_saude_service() -> SaudeService:
 
 
 @router.get("/ia")
-async def verificar_saude_ia(service: SaudeService = Depends(get_saude_service)):
+async def verificar_saude_ia(
+    deep: bool = False,
+    service: SaudeService = Depends(get_saude_service),
+):
     """
     Health-check do subsistema de IA: verifica provedor LLM, cache e banco.
-    Resposta garantida em < 200ms (sem I/O externo). Atende à US IA-12.
+
+    - **deep=False** (default): inspeção dos adapters injetados, sem I/O.
+      Resposta garantida em < 200ms.
+    - **deep=true**: ping ativo no LLM com timeout estrito de 100ms. Pode
+      detectar Gemini fora do ar / chave inválida. Latência adicional.
+
+    Atende à US IA-12.
     """
-    status = service.verificar_saude()
+    status = service.verificar_saude(deep=deep)
     return status.to_dict()

@@ -65,3 +65,29 @@ def test_get_saude_ia_responde_em_menos_de_200ms(client_com_fake_llm):
 def test_get_saude_ia_endpoint_registrado_em_main():
     paths = [r.path for r in main_module.app.routes]
     assert "/saude/ia" in paths
+
+
+def test_get_saude_ia_deep_true_executa_ping(client_com_fake_llm):
+    """Modo deep com Fake ok deve incluir o ping no detalhe e seguir degraded."""
+    r = client_com_fake_llm.get("/saude/ia?deep=true")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["checks"]["provedor_llm"]["detalhe"].get("ping") == "fake-ok"
+    assert body["status"] == "degraded"
+
+
+def test_get_saude_ia_deep_marca_unhealthy_quando_ping_falha():
+    """Override do service com Fake que falha no ping."""
+    service = SaudeServiceImpl(
+        provedor_llm=AdaptadorLLMFake(ping_falha="gemini timeout"),
+    )
+    main_module.app.dependency_overrides[get_saude_service] = lambda: service
+    try:
+        r = TestClient(main_module.app).get("/saude/ia?deep=true")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["status"] == "unhealthy"
+        assert body["checks"]["provedor_llm"]["status"] == "unhealthy"
+        assert "gemini timeout" in body["checks"]["provedor_llm"]["detalhe"]["ping"]
+    finally:
+        main_module.app.dependency_overrides.clear()
