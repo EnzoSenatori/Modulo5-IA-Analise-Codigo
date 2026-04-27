@@ -67,6 +67,17 @@ Resposta:
 | `unhealthy` (algum subsistema fora). Resposta garantida em **< 200ms** —
 checks rodam só por inspeção dos adapters injetados, sem chamada de rede.
 
+#### Modo `?deep=true` — validação ativa do LLM
+
+```bash
+curl "http://localhost:8001/saude/ia?deep=true"
+```
+
+Faz um ping real ao Gemini com **timeout estrito de 100ms** (hard timeout via
+ThreadPoolExecutor). Se o LLM estiver fora ou demorar demais, marca
+`unhealthy` no `provedor_llm`. Use em monitoramento de uptime; o default
+(sem `deep`) é melhor pra readiness probe / liveness check.
+
 ## Testes
 
 ```bash
