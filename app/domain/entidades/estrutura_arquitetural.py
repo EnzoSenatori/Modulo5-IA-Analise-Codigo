@@ -13,16 +13,18 @@ _SETA_POR_TIPO = {
 
 @dataclass
 class EstruturaArquitetural:
-    """Resultado da análise: componentes, relações e avisos de degradação."""
+    """Resultado da análise: componentes, relações, idioma e avisos de degradação."""
     componentes: List[Componente]
     relacoes: List[Relacao]
     warnings: List[str] = field(default_factory=list)
+    linguagem: str = "desconhecida"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "componentes": [asdict(c) for c in self.componentes],
             "relacoes": [asdict(r) for r in self.relacoes],
             "warnings": list(self.warnings),
+            "linguagem": self.linguagem,
         }
 
     def to_mermaid(self) -> str:

@@ -78,3 +78,63 @@ def test_codigo_sem_classes_retorna_estrutura_vazia(parser):
     assert estrutura.componentes == []
     assert estrutura.relacoes == []
     assert estrutura.warnings == []
+    assert estrutura.linguagem == "python"
+
+
+def test_caminho_feliz_marca_linguagem_python(parser):
+    service = EstruturaServiceImpl(parser_codigo=parser, provedor_llm=AdaptadorLLMFake())
+    estrutura = service.gerar_diagrama("class A:\n    pass\n")
+    assert estrutura.linguagem == "python"
+
+
+def test_codigo_javascript_retorna_warning_e_estrutura_vazia(parser):
+    service = EstruturaServiceImpl(parser_codigo=parser, provedor_llm=AdaptadorLLMFake())
+    codigo_js = """
+function somar(a, b) {
+    return a + b;
+}
+const x = () => 42;
+"""
+    estrutura = service.gerar_diagrama(codigo_js)
+    assert estrutura.linguagem == "javascript"
+    assert estrutura.componentes == []
+    assert estrutura.relacoes == []
+    assert len(estrutura.warnings) == 1
+    assert "javascript" in estrutura.warnings[0].lower()
+    assert "não suportada" in estrutura.warnings[0]
+
+
+def test_codigo_java_detectado_como_nao_suportado(parser):
+    service = EstruturaServiceImpl(parser_codigo=parser, provedor_llm=AdaptadorLLMFake())
+    codigo_java = """
+public class Calculadora {
+    public static void main(String[] args) {
+        System.out.println("oi");
+    }
+}
+"""
+    estrutura = service.gerar_diagrama(codigo_java)
+    assert estrutura.linguagem == "java"
+    assert estrutura.componentes == []
+
+
+def test_codigo_go_detectado_como_nao_suportado(parser):
+    service = EstruturaServiceImpl(parser_codigo=parser, provedor_llm=AdaptadorLLMFake())
+    codigo_go = """
+package main
+
+func somar(a int, b int) int {
+    return a + b
+}
+"""
+    estrutura = service.gerar_diagrama(codigo_go)
+    assert estrutura.linguagem == "go"
+    assert estrutura.componentes == []
+
+
+def test_codigo_irreconhecivel_marcado_como_desconhecida(parser):
+    service = EstruturaServiceImpl(parser_codigo=parser, provedor_llm=AdaptadorLLMFake())
+    estrutura = service.gerar_diagrama("xpto qweasd 12345 !!!\n")
+    assert estrutura.linguagem == "desconhecida"
+    assert estrutura.componentes == []
+    assert "não suportada" in estrutura.warnings[0]

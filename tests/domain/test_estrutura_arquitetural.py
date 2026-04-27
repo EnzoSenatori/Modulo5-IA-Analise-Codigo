@@ -5,7 +5,17 @@ from app.domain.entidades.estrutura_arquitetural import EstruturaArquitetural
 
 def test_to_dict_estrutura_vazia():
     e = EstruturaArquitetural(componentes=[], relacoes=[])
-    assert e.to_dict() == {"componentes": [], "relacoes": [], "warnings": []}
+    assert e.to_dict() == {
+        "componentes": [],
+        "relacoes": [],
+        "warnings": [],
+        "linguagem": "desconhecida",
+    }
+
+
+def test_to_dict_inclui_linguagem():
+    e = EstruturaArquitetural(componentes=[], relacoes=[], linguagem="python")
+    assert e.to_dict()["linguagem"] == "python"
 
 
 def test_to_dict_serializa_componentes_e_relacoes():
