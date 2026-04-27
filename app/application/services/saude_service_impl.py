@@ -5,14 +5,19 @@ from app.application.ports.driving.saude_service import SaudeService
 from app.application.ports.driven.provedor_llm import ProvedorLLM
 from app.domain.entidades.status_saude import StatusSaude, CheckSaude
 
+# Timeout do ping em modo deep — escolhido pra balancear "validação real"
+# com latência aceitável.
+_PING_TIMEOUT_MS = 100
+
 
 class SaudeServiceImpl(SaudeService):
     """
-    Verifica saúde de subsistemas sem fazer I/O externo (garante <200ms).
+    Verifica saúde de subsistemas. Modo padrão (deep=False) é introspectivo
+    e garante <200ms. Modo deep=True faz ping ativo no LLM com timeout
+    estrito.
 
-    Os checks são feitos por inspeção do tipo dos adapters injetados, sem
-    chamar a API do Gemini de fato. Cache e Banco aparecem como
-    `not_configured` enquanto não houver adapters reais para eles.
+    Cache e Banco aparecem como `not_configured` enquanto não houver
+    adapters reais para eles.
     """
 
     def __init__(
@@ -25,10 +30,10 @@ class SaudeServiceImpl(SaudeService):
         self._cache = cache_adapter
         self._banco = banco_adapter
 
-    def verificar_saude(self) -> StatusSaude:
+    def verificar_saude(self, deep: bool = False) -> StatusSaude:
         inicio = time.perf_counter()
 
-        check_llm = self._check_provedor_llm()
+        check_llm = self._check_provedor_llm(deep=deep)
         check_cache = self._check_cache()
         check_banco = self._check_banco()
 
@@ -47,18 +52,31 @@ class SaudeServiceImpl(SaudeService):
             tempo_ms=tempo_ms,
         )
 
-    def _check_provedor_llm(self) -> CheckSaude:
+    def _check_provedor_llm(self, deep: bool) -> CheckSaude:
         if self._provedor_llm is None:
             return CheckSaude(status="unhealthy", detalhe={"motivo": "não injetado"})
 
         tipo = type(self._provedor_llm).__name__
-        # Fake é dev-mode: funciona, mas não é o LLM real → degraded.
-        if tipo == "AdaptadorLLMFake":
-            return CheckSaude(
-                status="degraded",
-                detalhe={"tipo": tipo, "motivo": "modo dev sem chave Gemini"},
-            )
-        return CheckSaude(status="healthy", detalhe={"tipo": tipo})
+        detalhe = {"tipo": tipo}
+
+        # Inspeção: Fake é dev-mode, conta como degraded.
+        status_inspecao = "degraded" if tipo == "AdaptadorLLMFake" else "healthy"
+        if status_inspecao == "degraded":
+            detalhe["motivo"] = "modo dev sem chave Gemini"
+
+        if not deep:
+            return CheckSaude(status=status_inspecao, detalhe=detalhe)
+
+        # Modo deep: faz ping ativo. Não joga exceção por design do port.
+        ok, mensagem = self._provedor_llm.ping(timeout_ms=_PING_TIMEOUT_MS)
+        detalhe["ping"] = mensagem
+
+        if not ok:
+            # Provedor inalcançável → unhealthy independente do tipo.
+            return CheckSaude(status="unhealthy", detalhe=detalhe)
+
+        # Ping ok, mas Fake continua sendo Fake → degraded preserva o sinal.
+        return CheckSaude(status=status_inspecao, detalhe=detalhe)
 
     def _check_cache(self) -> CheckSaude:
         if self._cache is None:

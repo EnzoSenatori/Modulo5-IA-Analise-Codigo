@@ -63,3 +63,30 @@ def test_saude_responde_em_menos_de_200ms():
     service = SaudeServiceImpl(provedor_llm=AdaptadorLLMFake())
     s = service.verificar_saude()
     assert s.tempo_ms < 200, f"tempo_ms={s.tempo_ms} excedeu 200ms"
+
+
+def test_saude_deep_com_fake_ok_segue_degraded():
+    """Fake responde ping ok, mas continua sendo Fake → ainda degraded."""
+    service = SaudeServiceImpl(provedor_llm=AdaptadorLLMFake())
+    s = service.verificar_saude(deep=True)
+    assert s.checks["provedor_llm"].status == "degraded"
+    assert s.checks["provedor_llm"].detalhe.get("ping") == "fake-ok"
+
+
+def test_saude_deep_com_fake_falhando_vira_unhealthy():
+    """Quando o ping do provedor falha (deep), o status vai a unhealthy."""
+    service = SaudeServiceImpl(
+        provedor_llm=AdaptadorLLMFake(ping_falha="conexão recusada"),
+    )
+    s = service.verificar_saude(deep=True)
+    assert s.checks["provedor_llm"].status == "unhealthy"
+    assert "conexão recusada" in s.checks["provedor_llm"].detalhe["ping"]
+    assert s.status == "unhealthy"
+
+
+def test_saude_deep_omite_ping_quando_provedor_nao_injetado():
+    service = SaudeServiceImpl(provedor_llm=None)
+    s = service.verificar_saude(deep=True)
+    # Sem provedor injetado, nem chega a chamar ping.
+    assert s.checks["provedor_llm"].status == "unhealthy"
+    assert "ping" not in s.checks["provedor_llm"].detalhe
