@@ -9,3 +9,7 @@ class ParserError(AnaliseCodigoError):
 class EspecificacaoInvalidaError(AnaliseCodigoError):
     """Lançado quando os dados extraídos não formam uma especificação OpenAPI válida"""
     pass
+
+class LLMError(AnaliseCodigoError):
+    """Lançado quando a chamada ao provedor de LLM falha (timeout, JSON inválido, rede)"""
+    pass
