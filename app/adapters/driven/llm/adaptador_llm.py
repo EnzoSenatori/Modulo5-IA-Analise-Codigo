@@ -1,4 +1,6 @@
+import concurrent.futures
 import json
+import time
 from typing import Dict, List, Optional, Tuple
 
 from app.application.ports.driven.provedor_llm import ProvedorLLM
@@ -72,6 +74,38 @@ class AdaptadorLLMGemini(ProvedorLLM):
 
         return responsabilidades, relacoes_filtradas
 
+    def ping(self, timeout_ms: int = 100) -> Tuple[bool, str]:
+        """
+        Faz uma chamada minúscula ao Gemini com timeout estrito (hard timeout
+        via ThreadPoolExecutor — o request é abandonado se exceder). Não
+        levanta exceção; retorna (False, motivo) em qualquer falha.
+        """
+        timeout_s = max(timeout_ms / 1000.0, 0.05)
+        inicio = time.perf_counter()
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                future = ex.submit(self._executar_ping)
+                try:
+                    future.result(timeout=timeout_s)
+                except concurrent.futures.TimeoutError:
+                    return (False, f"timeout após {timeout_ms}ms")
+            elapsed_ms = int((time.perf_counter() - inicio) * 1000)
+            return (True, f"ok em {elapsed_ms}ms")
+        except Exception as e:
+            return (False, f"erro: {e}")
+
+    def _executar_ping(self) -> None:
+        """Chamada real ao Gemini para o ping. Subclasses de teste podem fazer override."""
+        from google.genai import types
+        self._modelo.models.generate_content(
+            model=self._modelo_nome,
+            contents="ping",
+            config=types.GenerateContentConfig(
+                response_mime_type="text/plain",
+                max_output_tokens=1,
+            ),
+        )
+
     def _chamar_modelo(self, prompt: str) -> str:
         from google.genai import types
         resposta = self._modelo.models.generate_content(
@@ -121,10 +155,12 @@ class AdaptadorLLMFake(ProvedorLLM):
         responsabilidades: Optional[Dict[str, str]] = None,
         relacoes: Optional[List[Relacao]] = None,
         erro: Optional[Exception] = None,
+        ping_falha: Optional[str] = None,
     ):
         self._responsabilidades = responsabilidades or {}
         self._relacoes = relacoes or []
         self._erro = erro
+        self._ping_falha = ping_falha
 
     def inferir_relacoes_e_responsabilidades(
         self,
@@ -134,3 +170,8 @@ class AdaptadorLLMFake(ProvedorLLM):
         if self._erro is not None:
             raise self._erro
         return dict(self._responsabilidades), list(self._relacoes)
+
+    def ping(self, timeout_ms: int = 100) -> Tuple[bool, str]:
+        if self._ping_falha is not None:
+            return (False, self._ping_falha)
+        return (True, "fake-ok")

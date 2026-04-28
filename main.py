@@ -3,6 +3,7 @@ from fastapi import FastAPI
 
 from app.adapters.driving.http.openapi_routes import router as openapi_router
 from app.adapters.driving.http.estrutura_routes import router as estrutura_router
+from app.adapters.driving.http.saude_routes import router as saude_router
 
 app = FastAPI(
     title="Módulo 5 - IA Análise de Código",
@@ -12,6 +13,7 @@ app = FastAPI(
 
 app.include_router(openapi_router)
 app.include_router(estrutura_router)
+app.include_router(saude_router)
 
 
 @app.get("/health", tags=["Saúde"])

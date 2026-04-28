@@ -78,3 +78,71 @@ def test_gemini_excecao_de_rede_levanta_llm_error():
     g = _GeminiMockavel(excecao=TimeoutError("rede caiu"))
     with pytest.raises(LLMError):
         g.inferir_relacoes_e_responsabilidades("c", ["X"])
+
+
+def test_gemini_api_key_vazia_levanta_value_error():
+    """Cobre o branch de validação no __init__ do AdaptadorLLMGemini."""
+    with pytest.raises(ValueError, match="api_key"):
+        AdaptadorLLMGemini(api_key="")
+
+
+def test_gemini_init_com_api_key_constroi_client_sem_io():
+    """O __init__ + _inicializar_modelo cria o cliente sem fazer chamada de rede."""
+    g = AdaptadorLLMGemini(api_key="fake-key-just-for-init", modelo="gemini-2.0-flash", timeout=5)
+    assert g._modelo is not None
+    assert g._modelo_nome == "gemini-2.0-flash"
+    assert g._timeout == 5
+
+
+class _GeminiPingMockavel(AdaptadorLLMGemini):
+    """Subclasse de teste que substitui só o _executar_ping."""
+    def __init__(self, sleep_s: float = 0.0, raise_exc: Exception | None = None):
+        # bypass __init__ pai
+        self._modelo_nome = "gemini-2.0-flash"
+        self._sleep_s = sleep_s
+        self._raise = raise_exc
+
+    def _executar_ping(self):
+        import time as _t
+        if self._raise is not None:
+            raise self._raise
+        if self._sleep_s > 0:
+            _t.sleep(self._sleep_s)
+
+
+def test_gemini_ping_caminho_feliz():
+    g = _GeminiPingMockavel()
+    ok, msg = g.ping(timeout_ms=200)
+    assert ok is True
+    assert "ok em" in msg
+
+
+def test_gemini_ping_estoura_timeout():
+    g = _GeminiPingMockavel(sleep_s=0.5)  # 500ms > 100ms timeout
+    ok, msg = g.ping(timeout_ms=100)
+    assert ok is False
+    assert "timeout" in msg
+
+
+def test_gemini_ping_captura_excecao_de_rede():
+    g = _GeminiPingMockavel(raise_exc=ConnectionError("rede caiu"))
+    ok, msg = g.ping()
+    assert ok is False
+    assert "erro" in msg
+    assert "rede caiu" in msg
+
+
+def test_gemini_montar_prompt_inclui_codigo_e_classes():
+    """Cobre _montar_prompt diretamente — anteriormente só era testado por contra-prova."""
+    g = _GeminiPingMockavel()
+    prompt = g._montar_prompt("class X: pass", ["X", "Y"])
+    assert "class X: pass" in prompt
+    assert "- X" in prompt
+    assert "- Y" in prompt
+    assert "JSON válido" in prompt
+
+
+def test_gemini_montar_prompt_lida_com_lista_vazia():
+    g = _GeminiPingMockavel()
+    prompt = g._montar_prompt("def x(): pass", [])
+    assert "(nenhuma)" in prompt
