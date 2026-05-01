@@ -4,7 +4,8 @@ from app.adapters.driven.llm.adaptador_llm import AdaptadorLLMGemini, AdaptadorL
 from app.application.services.openapi_service_impl import OpenApiServiceImpl
 from app.application.services.estrutura_service_impl import EstruturaServiceImpl
 from app.application.services.saude_service_impl import SaudeServiceImpl
-
+from app.adapters.driven.analise.adaptador_analisador_python import AdaptadorAnalisadorPython
+from app.application.services.qualidade_service_impl import QualidadeServiceImpl
 
 class CompositionRoot:
     """Instancia adapters e injeta dependências nos services."""
@@ -12,6 +13,7 @@ class CompositionRoot:
     def __init__(self):
         # Driven adapters
         self.parser_python = AdaptadorParserPython()
+        self.analisador_estatico = AdaptadorAnalisadorPython()
 
         if settings.GEMINI_API_KEY:
             self.provedor_llm = AdaptadorLLMGemini(
@@ -32,6 +34,9 @@ class CompositionRoot:
         self.openapi_service = OpenApiServiceImpl(
             parser_codigo=self.parser_python,
         )
+        self.qualidade_service = QualidadeServiceImpl(
+            analisador_estatico=self.analisador_estatico
+        )
         self.estrutura_service = EstruturaServiceImpl(
             parser_codigo=self.parser_python,
             provedor_llm=self.provedor_llm,
@@ -50,3 +55,6 @@ class CompositionRoot:
 
     def get_saude_service(self):
         return self.saude_service
+
+    def get_qualidade_service(self):
+        return self.qualidade_service
