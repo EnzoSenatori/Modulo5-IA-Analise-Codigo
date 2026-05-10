@@ -58,3 +58,8 @@ class FormatoNaoSuportadoError(AnaliseCodigoError):
 class PDFInvalidoError(AnaliseCodigoError):
     """Bytes PDF invalidos ou nao parseaveis pelo pypdf."""
     pass
+
+
+class ImpactoInvalidoError(AnaliseCodigoError):
+    """Inputs invalidos para analise de impacto (alvo vazio, etc)."""
+    pass
