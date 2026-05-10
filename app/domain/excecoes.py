@@ -38,3 +38,8 @@ class CoberturaInvalidaError(AnaliseCodigoError):
 class IgnorarInvalidoError(AnaliseCodigoError):
     """Tentativa de marcar componente como ignorado com dados faltando."""
     pass
+
+
+class CodigoVazioError(AnaliseCodigoError):
+    """Codigo fonte vazio onde se esperava conteudo (ex: refatoracao)."""
+    pass
