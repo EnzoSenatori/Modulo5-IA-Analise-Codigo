@@ -9,6 +9,7 @@ from app.application.services.qualidade_service_impl import QualidadeServiceImpl
 from app.application.services.comparacao_diagrama_service_impl import (
     ComparacaoDiagramaServiceImpl,
 )
+from app.application.services.cobertura_service_impl import CoberturaServiceImpl
 from app.application.services.integracao_ci_service_impl import (
     IntegracaoCIServiceImpl,
 )
@@ -19,6 +20,9 @@ from app.adapters.driven.git.adaptador_github import (
 from app.adapters.driven.git.notificador_pr_github import (
     NotificadorPRFake,
     NotificadorPRGitHubHTTP,
+)
+from app.adapters.driven.persistence.repositorio_ignorados_sqlite import (
+    RepositorioIgnoradosSQLite,
 )
 from app.adapters.driven.persistence.repositorio_webhooks_sqlite import (
     RepositorioWebhooksSQLite,
@@ -68,6 +72,13 @@ class CompositionRoot:
             estrutura_service=self.estrutura_service,
         )
 
+        # --- Cobertura (IA-07) ---
+        self.repositorio_ignorados = RepositorioIgnoradosSQLite(settings.COBERTURA_SQLITE_PATH)
+        self.cobertura_service = CoberturaServiceImpl(
+            parser=self.parser_python,
+            repositorio_ignorados=self.repositorio_ignorados,
+        )
+
         # --- Integracao CI (IA-11) ---
         self.repositorio_webhooks = RepositorioWebhooksSQLite(settings.WEBHOOKS_SQLITE_PATH)
 
@@ -110,6 +121,9 @@ class CompositionRoot:
 
     def get_comparacao_service(self):
         return self.comparacao_service
+
+    def get_cobertura_service(self):
+        return self.cobertura_service
 
     def get_integracao_ci_service(self):
         return self.integracao_ci_service
