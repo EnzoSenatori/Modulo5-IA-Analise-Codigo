@@ -7,6 +7,7 @@ from app.adapters.driving.http.saude_routes import router as saude_router
 from app.adapters.driving.http.qualidade_routes import router as qualidade_router
 from app.adapters.driving.http.comparacao_routes import router as comparacao_router
 from app.adapters.driving.http.cobertura_routes import router as cobertura_router
+from app.adapters.driving.http.refatoracao_routes import router as refatoracao_router
 from app.adapters.driving.http.webhook_routes import router as webhook_router
 
 app = FastAPI(
@@ -21,6 +22,7 @@ app.include_router(saude_router)
 app.include_router(qualidade_router)
 app.include_router(comparacao_router)
 app.include_router(cobertura_router)
+app.include_router(refatoracao_router)
 app.include_router(webhook_router)
 
 @app.get("/health", tags=["Saúde"])
