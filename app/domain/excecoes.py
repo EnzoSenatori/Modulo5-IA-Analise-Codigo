@@ -28,3 +28,13 @@ class WebhookIgnoradoError(AnaliseCodigoError):
 class GitHubAPIError(AnaliseCodigoError):
     """Falha de rede ou status HTTP inesperado ao falar com GitHub."""
     pass
+
+
+class CoberturaInvalidaError(AnaliseCodigoError):
+    """Inputs invalidos para analise de cobertura (codigo vazio, etc)."""
+    pass
+
+
+class IgnorarInvalidoError(AnaliseCodigoError):
+    """Tentativa de marcar componente como ignorado com dados faltando."""
+    pass

@@ -16,3 +16,6 @@ WEBHOOKS_SQLITE_PATH: str = os.getenv("WEBHOOKS_SQLITE_PATH", "ia_webhooks.db")
 # "github" = chama API real; "fake" = adapter local pra testes/dev sem rede.
 ADAPTADOR_GITHUB: str = os.getenv("ADAPTADOR_GITHUB", "github")
 ADAPTADOR_NOTIFICADOR_PR: str = os.getenv("ADAPTADOR_NOTIFICADOR_PR", "github")
+
+# Persistencia de componentes ignorados na analise de cobertura (US IA-07).
+COBERTURA_SQLITE_PATH: str = os.getenv("COBERTURA_SQLITE_PATH", "ia_cobertura.db")
