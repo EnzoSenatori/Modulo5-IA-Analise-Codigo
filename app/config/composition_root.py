@@ -12,6 +12,7 @@ from app.application.services.comparacao_diagrama_service_impl import (
 from app.application.services.cobertura_service_impl import CoberturaServiceImpl
 from app.application.services.refatoracao_service_impl import RefatoracaoServiceImpl
 from app.application.services.caso_de_uso_service_impl import CasoDeUsoServiceImpl
+from app.application.services.impacto_service_impl import ImpactoServiceImpl
 from app.application.services.integracao_ci_service_impl import (
     IntegracaoCIServiceImpl,
 )
@@ -87,6 +88,9 @@ class CompositionRoot:
         # --- Caso de uso (IA-03) — sem state, puramente regex sobre texto ---
         self.caso_uso_service = CasoDeUsoServiceImpl()
 
+        # --- Impacto de refatoracao (IA-06) — sem state, AST puro ---
+        self.impacto_service = ImpactoServiceImpl()
+
         # --- Integracao CI (IA-11) ---
         self.repositorio_webhooks = RepositorioWebhooksSQLite(settings.WEBHOOKS_SQLITE_PATH)
 
@@ -138,6 +142,9 @@ class CompositionRoot:
 
     def get_caso_uso_service(self):
         return self.caso_uso_service
+
+    def get_impacto_service(self):
+        return self.impacto_service
 
     def get_integracao_ci_service(self):
         return self.integracao_ci_service
