@@ -13,3 +13,18 @@ class EspecificacaoInvalidaError(AnaliseCodigoError):
 class LLMError(AnaliseCodigoError):
     """Lançado quando a chamada ao provedor de LLM falha (timeout, JSON inválido, rede)"""
     pass
+
+
+class AssinaturaWebhookInvalidaError(AnaliseCodigoError):
+    """X-Hub-Signature-256 nao bate com HMAC do payload (US IA-11)."""
+    pass
+
+
+class WebhookIgnoradoError(AnaliseCodigoError):
+    """Evento de webhook recebido mas nao alvo de processamento (ex: action='closed')."""
+    pass
+
+
+class GitHubAPIError(AnaliseCodigoError):
+    """Falha de rede ou status HTTP inesperado ao falar com GitHub."""
+    pass
