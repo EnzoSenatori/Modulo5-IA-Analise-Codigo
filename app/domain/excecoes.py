@@ -43,3 +43,18 @@ class IgnorarInvalidoError(AnaliseCodigoError):
 class CodigoVazioError(AnaliseCodigoError):
     """Codigo fonte vazio onde se esperava conteudo (ex: refatoracao)."""
     pass
+
+
+class RequisitosVaziosError(AnaliseCodigoError):
+    """Texto de requisitos vazio onde se esperava conteudo."""
+    pass
+
+
+class FormatoNaoSuportadoError(AnaliseCodigoError):
+    """Formato de entrada nao suportado para extracao de requisitos."""
+    pass
+
+
+class PDFInvalidoError(AnaliseCodigoError):
+    """Bytes PDF invalidos ou nao parseaveis pelo pypdf."""
+    pass
