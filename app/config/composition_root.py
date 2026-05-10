@@ -6,6 +6,9 @@ from app.application.services.estrutura_service_impl import EstruturaServiceImpl
 from app.application.services.saude_service_impl import SaudeServiceImpl
 from app.adapters.driven.analise.adaptador_analisador_python import AdaptadorAnalisadorPython
 from app.application.services.qualidade_service_impl import QualidadeServiceImpl
+from app.application.services.comparacao_diagrama_service_impl import (
+    ComparacaoDiagramaServiceImpl,
+)
 
 class CompositionRoot:
     """Instancia adapters e injeta dependências nos services."""
@@ -46,6 +49,9 @@ class CompositionRoot:
             cache_adapter=self.cache_adapter,
             banco_adapter=self.banco_adapter,
         )
+        self.comparacao_service = ComparacaoDiagramaServiceImpl(
+            estrutura_service=self.estrutura_service,
+        )
 
     def get_openapi_service(self):
         return self.openapi_service
@@ -58,3 +64,6 @@ class CompositionRoot:
 
     def get_qualidade_service(self):
         return self.qualidade_service
+
+    def get_comparacao_service(self):
+        return self.comparacao_service
