@@ -9,6 +9,21 @@ from app.application.services.qualidade_service_impl import QualidadeServiceImpl
 from app.application.services.comparacao_diagrama_service_impl import (
     ComparacaoDiagramaServiceImpl,
 )
+from app.application.services.integracao_ci_service_impl import (
+    IntegracaoCIServiceImpl,
+)
+from app.adapters.driven.git.adaptador_github import (
+    AdaptadorGitHubFake,
+    AdaptadorGitHubHTTP,
+)
+from app.adapters.driven.git.notificador_pr_github import (
+    NotificadorPRFake,
+    NotificadorPRGitHubHTTP,
+)
+from app.adapters.driven.persistence.repositorio_webhooks_sqlite import (
+    RepositorioWebhooksSQLite,
+)
+
 
 class CompositionRoot:
     """Instancia adapters e injeta dependências nos services."""
@@ -53,6 +68,34 @@ class CompositionRoot:
             estrutura_service=self.estrutura_service,
         )
 
+        # --- Integracao CI (IA-11) ---
+        self.repositorio_webhooks = RepositorioWebhooksSQLite(settings.WEBHOOKS_SQLITE_PATH)
+
+        if (settings.ADAPTADOR_GITHUB or "github").lower() == "fake":
+            self.repositorio_git = AdaptadorGitHubFake()
+        else:
+            self.repositorio_git = AdaptadorGitHubHTTP(
+                base_url=settings.GITHUB_API_BASE,
+                token=settings.GITHUB_TOKEN or None,
+                timeout_segundos=settings.GITHUB_TIMEOUT_S,
+            )
+
+        if (settings.ADAPTADOR_NOTIFICADOR_PR or "github").lower() == "fake":
+            self.notificador_pr = NotificadorPRFake()
+        else:
+            self.notificador_pr = NotificadorPRGitHubHTTP(
+                base_url=settings.GITHUB_API_BASE,
+                token=settings.GITHUB_TOKEN or None,
+                timeout_segundos=settings.GITHUB_TIMEOUT_S,
+            )
+
+        self.integracao_ci_service = IntegracaoCIServiceImpl(
+            repositorio_webhooks=self.repositorio_webhooks,
+            repositorio_git=self.repositorio_git,
+            notificador=self.notificador_pr,
+            comparacao=self.comparacao_service,
+        )
+
     def get_openapi_service(self):
         return self.openapi_service
 
@@ -67,3 +110,6 @@ class CompositionRoot:
 
     def get_comparacao_service(self):
         return self.comparacao_service
+
+    def get_integracao_ci_service(self):
+        return self.integracao_ci_service

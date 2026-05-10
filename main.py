@@ -6,6 +6,7 @@ from app.adapters.driving.http.estrutura_routes import router as estrutura_route
 from app.adapters.driving.http.saude_routes import router as saude_router
 from app.adapters.driving.http.qualidade_routes import router as qualidade_router
 from app.adapters.driving.http.comparacao_routes import router as comparacao_router
+from app.adapters.driving.http.webhook_routes import router as webhook_router
 
 app = FastAPI(
     title="Módulo 5 - IA Análise de Código",
@@ -18,6 +19,7 @@ app.include_router(estrutura_router)
 app.include_router(saude_router)
 app.include_router(qualidade_router)
 app.include_router(comparacao_router)
+app.include_router(webhook_router)
 
 @app.get("/health", tags=["Saúde"])
 async def health_check():
